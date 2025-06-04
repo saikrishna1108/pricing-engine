@@ -25,6 +25,7 @@ Resources:
           Properties:
             Path: /getPrice
             Method: get
+            Cors: "'*'"
 
   ReportOutcomeFunction:
     Type: AWS::Serverless::Function
@@ -37,6 +38,7 @@ Resources:
           Properties:
             Path: /reportOutcome
             Method: post
+            Cors: "'*'"
 
 Outputs:
   ApiUrl:
