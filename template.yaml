@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless Multi-Armed Bandit Pricing Engine
+
+Globals:
+  Function:
+    Timeout: 10       # 10 seconds max per invocation
+    Runtime: python3.9
+    MemorySize: 512
+    Environment:
+      Variables:
+        # These must match the names of your existing DynamoDB tables
+        DYNAMO_TABLE_ARMS: "PricingArms"
+        DYNAMO_TABLE_LOG:  "ImpressionsLog"
+
+Resources:
+  SelectPriceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: select_price.app
+      Role: arn:aws:iam::861985335071:role/LambdaPricingBanditRole
+      Events:
+        GetPriceAPI:
+          Type: Api
+          Properties:
+            Path: /getPrice
+            Method: get
+
+  ReportOutcomeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: report_outcome.app
+      Role: arn:aws:iam::861985335071:role/LambdaPricingBanditRole
+      Events:
+        ReportOutcomeAPI:
+          Type: Api
+          Properties:
+            Path: /reportOutcome
+            Method: post
+
+Outputs:
+  ApiUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
