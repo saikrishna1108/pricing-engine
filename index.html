@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Serverless Pricing Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 480px;
+      margin: 40px auto;
+      padding: 0 16px;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    #product-container {
+      background: #fff;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      margin-bottom: 24px;
+    }
+    #product-name {
+      font-size: 24px;
+      margin-bottom: 12px;
+      color: #222;
+    }
+    #price {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 24px;
+      color: #007acc;
+    }
+    .button-container {
+      display: flex;
+      justify-content: space-between;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 48%;
+    }
+    #buy-btn {
+      background-color: #28a745;
+      color: #fff;
+    }
+    #no-btn {
+      background-color: #dc3545;
+      color: #fff;
+    }
+    #message {
+      margin-top: 24px;
+      font-size: 18px;
+      color: #555;
+      text-align: center;
+    }
+    #loading {
+      text-align: center;
+      font-size: 18px;
+      color: #888;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dynamic Pricing Demo</h1>
+  <div id="product-container">
+    <div id="product-name">Product: Widget A</div>
+    <div id="price">--.--</div>
+    <div id="loading">Loading price…</div>
+    <div class="button-container" style="display: none;">
+      <button id="buy-btn">Buy Now</button>
+      <button id="no-btn">Not Interested (Too High)</button>
+    </div>
+    <div id="message"></div>
+  </div>
+
+  <script>
+    /****************************************************
+     *  Replace YOUR_API_BASE with your actual API URL. *
+     *  For example:                                   *
+     *  https://njgyhvjif8.execute-api.us-east-1.amazonaws.com/Prod *
+     ****************************************************/
+    const API_BASE = "https://njgyhvjif8.execute-api.us-east-1.amazonaws.com/Prod";
+
+    // DOM elements
+    const priceElem = document.getElementById("price");
+    const loadingElem = document.getElementById("loading");
+    const buttonsDiv = document.querySelector(".button-container");
+    const buyBtn = document.getElementById("buy-btn");
+    const noBtn = document.getElementById("no-btn");
+    const messageElem = document.getElementById("message");
+
+    // State to hold the latest requestId
+    let currentRequestId = null;
+
+    // Fetch a new price from /getPrice
+    async function fetchPrice() {
+      messageElem.textContent = "";
+      priceElem.textContent = "--.--";
+      buttonsDiv.style.display = "none";
+      loadingElem.textContent = "Loading price…";
+
+      try {
+        const response = await fetch(`${API_BASE}/getPrice?productId=widget-A`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        // data = { price: 9.99, armId: "arm-1", requestId: "uuid-..." }
+        currentRequestId = data.requestId;
+        showPrice(data.price);
+      } catch (err) {
+        loadingElem.textContent = `Error loading price: ${err.message}`;
+      }
+    }
+
+    // Display price and show buttons
+    function showPrice(price) {
+      loadingElem.textContent = "";
+      priceElem.textContent = `$${price.toFixed(2)}`;
+      buttonsDiv.style.display = "flex";
+    }
+
+    // Report the outcome back to /reportOutcome
+    async function reportOutcome(bought) {
+      buttonsDiv.style.display = "none";
+      messageElem.textContent = bought
+        ? "Thanks for your purchase!"
+        : "OK, let’s try a different price…";
+      loadingElem.textContent = "";
+
+      try {
+        const payload = {
+          requestId: currentRequestId,
+          bought: bought
+        };
+        const response = await fetch(`${API_BASE}/reportOutcome`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        // After reporting, if user said “Not Interested”, fetch a new price
+        if (!bought) {
+          setTimeout(fetchPrice, 0); // schedule next fetch immediately
+        }
+      } catch (err) {
+        messageElem.textContent = `Error reporting outcome: ${err.message}`;
+      }
+    }
+
+    // Attach event listeners
+    buyBtn.addEventListener("click", () => reportOutcome(true));
+    noBtn.addEventListener("click", () => reportOutcome(false));
+
+    // On page load, fetch the first price
+    window.addEventListener("DOMContentLoaded", fetchPrice);
+  </script>
+</body>
+</html>
