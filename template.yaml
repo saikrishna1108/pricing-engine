@@ -13,7 +13,7 @@ Globals:
         DYNAMO_TABLE_LOG:  "ImpressionsLog"
 
 Resources:
-  # 1) Define an explicit API Gateway (Serverless::Api) with CORS
+  # 1) Create a single API Gateway resource with CORS properly configured
   PricingEngineApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -23,7 +23,7 @@ Resources:
         AllowMethods: "'GET,POST,OPTIONS'"
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
 
-  # 2) SelectPriceFunction, using the explicit API above
+  # 2) SelectPriceFunction: GET /getPrice
   SelectPriceFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -37,7 +37,7 @@ Resources:
             Path: /getPrice
             Method: get
 
-  # 3) ReportOutcomeFunction, using the same explicit API
+  # 3) ReportOutcomeFunction: POST /reportOutcome
   ReportOutcomeFunction:
     Type: AWS::Serverless::Function
     Properties:
