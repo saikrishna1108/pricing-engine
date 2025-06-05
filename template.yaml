@@ -13,6 +13,12 @@ Globals:
         DYNAMO_TABLE_ARMS: "PricingArms"
         DYNAMO_TABLE_LOG:  "ImpressionsLog"
 
+  Api:                     # ← Global API settings for CORS
+    Cors:
+      AllowOrigin: "'*'"
+      AllowMethods: "'GET,POST,OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+
 Resources:
   SelectPriceFunction:
     Type: AWS::Serverless::Function
@@ -25,7 +31,6 @@ Resources:
           Properties:
             Path: /getPrice
             Method: get
-            Cors: "'*'"
 
   ReportOutcomeFunction:
     Type: AWS::Serverless::Function
@@ -38,7 +43,6 @@ Resources:
           Properties:
             Path: /reportOutcome
             Method: post
-            Cors: "'*'"
 
 Outputs:
   ApiUrl:
