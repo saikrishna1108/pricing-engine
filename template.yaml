@@ -4,22 +4,30 @@ Description: Serverless Multi-Armed Bandit Pricing Engine
 
 Globals:
   Function:
-    Timeout: 10       # 10 seconds max per invocation
+    Timeout: 10
     Runtime: python3.9
     MemorySize: 512
     Environment:
       Variables:
-        # These must match the names of your existing DynamoDB tables
         DYNAMO_TABLE_ARMS: "PricingArms"
         DYNAMO_TABLE_LOG:  "ImpressionsLog"
 
-  Api:                     # ← Global API settings for CORS
-    Cors:
-      AllowOrigin: "'*'"
-      AllowMethods: "'GET,POST,OPTIONS'"
-      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-
 Resources:
+  # ───────────────────────────────────────────────────────────────────
+  # 1) Define an explicit API Gateway (Serverless::Api) with CORS settings
+  # ───────────────────────────────────────────────────────────────────
+  PricingEngineApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowOrigin: "'*'"
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+
+  # ───────────────────────────────────────────────────────────────────
+  # 2) SelectPriceFunction, linked to the explicit API above
+  # ───────────────────────────────────────────────────────────────────
   SelectPriceFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -29,9 +37,13 @@ Resources:
         GetPriceAPI:
           Type: Api
           Properties:
+            RestApiId: !Ref PricingEngineApi   # ← point to the explicit API
             Path: /getPrice
             Method: get
 
+  # ───────────────────────────────────────────────────────────────────
+  # 3) ReportOutcomeFunction, also linked to the explicit API above
+  # ───────────────────────────────────────────────────────────────────
   ReportOutcomeFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -41,10 +53,11 @@ Resources:
         ReportOutcomeAPI:
           Type: Api
           Properties:
+            RestApiId: !Ref PricingEngineApi   # ← same explicit API
             Path: /reportOutcome
             Method: post
 
 Outputs:
   ApiUrl:
     Description: "API Gateway endpoint URL"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    Value: !Sub "https://${PricingEngineApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
