@@ -13,9 +13,7 @@ Globals:
         DYNAMO_TABLE_LOG:  "ImpressionsLog"
 
 Resources:
-  # ───────────────────────────────────────────────────────────────────
-  # 1) Define an explicit API Gateway (Serverless::Api) with CORS settings
-  # ───────────────────────────────────────────────────────────────────
+  # 1) Define an explicit API Gateway (Serverless::Api) with CORS
   PricingEngineApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -25,9 +23,7 @@ Resources:
         AllowMethods: "'GET,POST,OPTIONS'"
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
 
-  # ───────────────────────────────────────────────────────────────────
-  # 2) SelectPriceFunction, linked to the explicit API above
-  # ───────────────────────────────────────────────────────────────────
+  # 2) SelectPriceFunction, using the explicit API above
   SelectPriceFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -37,13 +33,11 @@ Resources:
         GetPriceAPI:
           Type: Api
           Properties:
-            RestApiId: !Ref PricingEngineApi   # ← point to the explicit API
+            RestApiId: !Ref PricingEngineApi
             Path: /getPrice
             Method: get
 
-  # ───────────────────────────────────────────────────────────────────
-  # 3) ReportOutcomeFunction, also linked to the explicit API above
-  # ───────────────────────────────────────────────────────────────────
+  # 3) ReportOutcomeFunction, using the same explicit API
   ReportOutcomeFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -53,7 +47,7 @@ Resources:
         ReportOutcomeAPI:
           Type: Api
           Properties:
-            RestApiId: !Ref PricingEngineApi   # ← same explicit API
+            RestApiId: !Ref PricingEngineApi
             Path: /reportOutcome
             Method: post
 
